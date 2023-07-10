@@ -6,14 +6,14 @@ import (
 	"strconv"
 )
 
-var precedence = map[string]int{"+": 20, "-": 20, "*": 40, "/": 40, "%": 40, "^": 60}
+var precedence = map[string]int{"+": 90, "-": 90, "*": 100, "/": 100, "%": 100, ">": 70, "&": 60, "<": 70, ">>": 80, "<<": 80, "|": 40, "^": 50}
 
 type ExprAST interface {
 	toStr() string
 }
 
 type NumberExprAST struct {
-	Val float64
+	Val int
 	Str string
 }
 
@@ -106,7 +106,7 @@ func (a *AST) getTokPrecedence() int {
 }
 
 func (a *AST) parseNumber() NumberExprAST {
-	f64, err := strconv.ParseFloat(a.currTok.Tok, 64)
+	f64, err := strconv.Atoi(a.currTok.Tok)
 	if err != nil {
 		a.Err = errors.New(
 			fmt.Sprintf("%v\nwant '(' or '0-9' but get '%s'\n%s",
@@ -123,66 +123,8 @@ func (a *AST) parseNumber() NumberExprAST {
 	return n
 }
 
-func (a *AST) parseFunCallerOrConst() ExprAST {
-	name := a.currTok.Tok
-	a.getNextToken()
-	// call func
-	if a.currTok.Tok == "(" {
-		f := FunCallerExprAST{}
-		if _, ok := defFunc[name]; !ok {
-			a.Err = errors.New(
-				fmt.Sprintf("function `%s` is undefined\n%s",
-					name,
-					ErrPos(a.source, a.currTok.Offset)))
-			return f
-		}
-		a.getNextToken()
-		exprs := make([]ExprAST, 0)
-		if a.currTok.Tok == ")" {
-			// function call without parameters
-			// ignore the process of parameter resolution
-		} else {
-			exprs = append(exprs, a.ParseExpression())
-			for a.currTok.Tok != ")" && a.getNextToken() != nil {
-				if a.currTok.Type == COMMA {
-					continue
-				}
-				exprs = append(exprs, a.ParseExpression())
-			}
-		}
-		def := defFunc[name]
-		if def.argc >= 0 && len(exprs) != def.argc {
-			a.Err = errors.New(
-				fmt.Sprintf("wrong way calling function `%s`, parameters want %d but get %d\n%s",
-					name,
-					def.argc,
-					len(exprs),
-					ErrPos(a.source, a.currTok.Offset)))
-		}
-		a.getNextToken()
-		f.Name = name
-		f.Arg = exprs
-		return f
-	}
-	// call const
-	if v, ok := defConst[name]; ok {
-		return NumberExprAST{
-			Val: v,
-			Str: strconv.FormatFloat(v, 'f', 0, 64),
-		}
-	} else {
-		a.Err = errors.New(
-			fmt.Sprintf("const `%s` is undefined\n%s",
-				name,
-				ErrPos(a.source, a.currTok.Offset)))
-		return NumberExprAST{}
-	}
-}
-
 func (a *AST) parsePrimary() ExprAST {
 	switch a.currTok.Type {
-	case Identifier:
-		return a.parseFunCallerOrConst()
 	case Literal:
 		return a.parseNumber()
 	case Operator:

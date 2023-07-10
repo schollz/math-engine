@@ -1,49 +1,45 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"os"
-	"strings"
-	"time"
 
 	"github.com/dengsgo/math-engine/engine"
 )
 
-func main() {
-	loop()
-}
+// func main() {
+// 	loop()
+// }
 
-// input loop
-func loop() {
-	engine.RegFunction("double", 1, func(expr ...engine.ExprAST) float64 {
-		return engine.ExprASTResult(expr[0]) * 2
-	})
-	for {
-		fmt.Print("input /> ")
-		f := bufio.NewReader(os.Stdin)
-		s, err := f.ReadString('\n')
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		s = strings.TrimSpace(s)
-		if s == "" {
-			continue
-		}
-		if s == "exit" || s == "quit" || s == "q" {
-			fmt.Println("bye")
-			break
-		}
-		start := time.Now()
-		exec(s)
-		cost := time.Since(start)
-		fmt.Println("time: " + cost.String())
-	}
-}
+// // input loop
+// func loop() {
+// 	engine.RegFunction("double", 1, func(expr ...engine.ExprAST) float64 {
+// 		return engine.ExprASTResult(expr[0]) * 2
+// 	})
+// 	for {
+// 		fmt.Print("input /> ")
+// 		f := bufio.NewReader(os.Stdin)
+// 		s, err := f.ReadString('\n')
+// 		if err != nil {
+// 			fmt.Println(err)
+// 			return
+// 		}
+// 		s = strings.TrimSpace(s)
+// 		if s == "" {
+// 			continue
+// 		}
+// 		if s == "exit" || s == "quit" || s == "q" {
+// 			fmt.Println("bye")
+// 			break
+// 		}
+// 		start := time.Now()
+// 		exec(s)
+// 		cost := time.Since(start)
+// 		fmt.Println("time: " + cost.String())
+// 	}
+// }
 
 // call engine
-func exec(exp string) {
+func exec(exp string) (r int) {
 	// input text -> []token
 	toks, err := engine.Parse(exp)
 	if err != nil {
@@ -71,7 +67,8 @@ func exec(exp string) {
 		}
 	}()
 	// AST traversal -> result
-	r := engine.ExprASTResult(ar)
+	r = engine.ExprASTResult(ar)
 	fmt.Println("progressing ...\t", r)
 	fmt.Printf("%s = %v\n", exp, r)
+	return
 }

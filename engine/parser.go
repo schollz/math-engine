@@ -79,6 +79,8 @@ func (p *Parser) nextTok() *Token {
 		'*',
 		'/',
 		'^',
+		'&',
+		'|',
 		'%':
 		tok = &Token{
 			Tok:  string(p.ch),
@@ -86,7 +88,22 @@ func (p *Parser) nextTok() *Token {
 		}
 		tok.Offset = start
 		err = p.nextCh()
-
+	case
+		'>', '<':
+		tokS := string(p.ch)
+		bb, be := p.nextChPeek()
+		if be == nil && string(bb) == tokS {
+			tokS += string(p.ch)
+		}
+		tok = &Token{
+			Tok:  tokS,
+			Type: Operator,
+		}
+		tok.Offset = start
+		if len(tokS) > 1 {
+			p.nextCh()
+		}
+		err = p.nextCh()
 	case
 		'0',
 		'1',
@@ -135,6 +152,15 @@ func (p *Parser) nextTok() *Token {
 		}
 	}
 	return tok
+}
+
+func (p *Parser) nextChPeek() (byte, error) {
+	offset := p.offset + 1
+	fmt.Printf("\np.Source[offset]: %s\n", string(p.Source[offset]))
+	if offset < len(p.Source) {
+		return p.Source[offset], nil
+	}
+	return byte(0), errors.New("no byte")
 }
 
 func (p *Parser) nextCh() error {
